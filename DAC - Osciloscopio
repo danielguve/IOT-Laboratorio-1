@@ -1,0 +1,98 @@
+/*
+  POTENCIÓMETRO = FRECUENCIA
+  BOTÓN = CAMBIA FORMA DE ONDA
+  Ideal para ver claramente en osciloscopio
+*/
+
+#define PIN_POT 34
+#define PIN_DAC 25
+#define PIN_BOTON 15
+
+int frecuencia = 100;
+int formaOnda = 0;  // 0=seno, 1=triangular, 2=cuadrada
+bool botonAnterior = HIGH;
+
+void setup() {
+  Serial.begin(115200);
+  analogReadResolution(12);
+  pinMode(PIN_BOTON, INPUT_PULLUP);
+  
+  Serial.println("\n\n=================================");
+  Serial.println("GENERADOR DE SEÑALES CONTROLADO");
+  Serial.println("=================================");
+  Serial.println("Potenciómetro: Frecuencia");
+  Serial.println("Botón: Cambia forma de onda");
+  Serial.println("---------------------------------\n");
+  mostrarInfo();
+}
+
+void loop() {
+  // Leer potenciómetro para frecuencia
+  int pot = analogRead(PIN_POT);
+  frecuencia = map(pot, 0, 4095, 10, 1000);  // 10 Hz a 1000 Hz
+  
+  // Leer botón para cambiar forma de onda
+  bool boton = digitalRead(PIN_BOTON);
+  if(boton == LOW && botonAnterior == HIGH) {
+    formaOnda = (formaOnda + 1) % 3;
+    mostrarInfo();
+    delay(300);  // Debounce
+  }
+  botonAnterior = boton;
+  
+  // Generar la onda correspondiente
+  switch(formaOnda) {
+    case 0: generarSeno(frecuencia); break;
+    case 1: generarTriangular(frecuencia); break;
+    case 2: generarCuadrada(frecuencia); break;
+  }
+}
+
+void generarSeno(int freq) {
+  float periodo = 1000000.0 / freq;
+  int puntos = 100;
+  
+  for(int i = 0; i < puntos; i++) {
+    float angulo = (i * 2 * PI) / puntos;
+    int valor = 128 + 127 * sin(angulo);
+    dacWrite(PIN_DAC, valor);
+    delayMicroseconds(periodo / puntos);
+  }
+}
+
+void generarTriangular(int freq) {
+  float periodo = 1000000.0 / freq;
+  int puntos = 100;
+  
+  for(int i = 0; i < puntos; i++) {
+    float valor;
+    if(i < puntos/2) {
+      // Rampa ascendente
+      valor = (i * 2.0 * 255) / puntos;
+    } else {
+      // Rampa descendente
+      valor = 255 - ((i - puntos/2) * 2.0 * 255) / puntos;
+    }
+    dacWrite(PIN_DAC, (int)valor);
+    delayMicroseconds(periodo / puntos);
+  }
+}
+
+void generarCuadrada(int freq) {
+  float periodo = 1000000.0 / freq;
+  
+  dacWrite(PIN_DAC, 255);
+  delayMicroseconds(periodo / 2);
+  dacWrite(PIN_DAC, 0);
+  delayMicroseconds(periodo / 2);
+}
+
+void mostrarInfo() {
+  Serial.print("Forma de onda: ");
+  switch(formaOnda) {
+    case 0: Serial.print("SENOIDAL"); break;
+    case 1: Serial.print("TRIANGULAR"); break;
+    case 2: Serial.print("CUADRADA"); break;
+  }
+  Serial.print(" | Gira potenciómetro para cambiar frecuencia\n");
+}
