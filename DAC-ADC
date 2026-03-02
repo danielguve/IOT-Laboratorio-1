@@ -1,0 +1,98 @@
+#define PIN_DAC 25
+#define PIN_ADC 34
+
+int valorDAC = 0;
+int valorADC = 0;
+int modo = 0;  // 0=seno, 1=triangular, 2=cuadrada, 3=barrido
+
+void setup() {
+  Serial.begin(115200);
+  analogReadResolution(12);
+  
+  Serial.println("Iniciando prueba DAC-ADC...");
+  Serial.println("Modos: Seno | Triangular | Cuadrada | Barrido");
+  delay(2000);
+}
+
+void loop() {
+  static unsigned long tiempoCambio = 0;
+  if(millis() - tiempoCambio > 5000) {
+    modo = (modo + 1) % 4;
+    tiempoCambio = millis();
+    
+    // Indicador de cambio de modo en el plotter
+    Serial.println("--- Cambio de modo ---");
+  }
+  
+
+  switch(modo) {
+    case 0:  
+      for(int i = 0; i < 360; i += 5) {
+        valorDAC = 128 + 127 * sin(i * 3.14159 / 180);
+        dacWrite(PIN_DAC, valorDAC);
+        valorADC = analogRead(PIN_ADC);
+        
+        Serial.print(valorDAC);
+        Serial.print(",");
+        Serial.println(valorADC);
+        delay(20);
+      }
+      break;
+      
+    case 1: 
+      for(int i = 0; i <= 255; i++) {
+        dacWrite(PIN_DAC, i);
+        valorADC = analogRead(PIN_ADC);
+        Serial.print(i);
+        Serial.print(",");
+        Serial.println(valorADC);
+        delay(10);
+      }
+      for(int i = 255; i >= 0; i--) {
+        dacWrite(PIN_DAC, i);
+        valorADC = analogRead(PIN_ADC);
+        Serial.print(i);
+        Serial.print(",");
+        Serial.println(valorADC);
+        delay(10);
+      }
+      break;
+      
+    case 2:  
+      for(int ciclo = 0; ciclo < 10; ciclo++) {
+        dacWrite(PIN_DAC, 255);
+        for(int i = 0; i < 20; i++) {
+          valorADC = analogRead(PIN_ADC);
+          Serial.print(255);
+          Serial.print(",");
+          Serial.println(valorADC);
+          delay(5);
+        }
+        
+        dacWrite(PIN_DAC, 0);
+        for(int i = 0; i < 20; i++) {
+          valorADC = analogRead(PIN_ADC);
+          Serial.print(0);
+          Serial.print(",");
+          Serial.println(valorADC);
+          delay(5);
+        }
+      }
+      break;
+      
+    case 3:
+      for(int dac = 0; dac <= 255; dac++) {
+        dacWrite(PIN_DAC, dac);
+        valorADC = analogRead(PIN_ADC);
+        
+        // Escalar ADC para comparar visualmente
+        int adcEscalado = map(valorADC, 0, 4095, 0, 255);
+        
+        Serial.print(dac);           // DAC (0-255)
+        Serial.print(",");
+        Serial.println(adcEscalado);  // ADC escalado (0-255)
+        delay(20);
+      }
+      break;
+  }
+}
