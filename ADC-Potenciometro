@@ -1,0 +1,35 @@
+#define PIN_POTENCIOMETRO 34
+
+// Variables
+int valorADC = 0;
+float voltaje = 0.0;
+
+void setup() {
+  // Iniciar comunicación serial a 115200 baudios
+  Serial.begin(115200);
+  
+  // Configurar resolución del ADC a 12 bits
+  analogReadResolution(12);
+  
+  // Mensaje inicial solo una vez (el plotter ignorará estas líneas)
+  Serial.println("Iniciando lectura de potenciómetro...");
+  Serial.println("Formato: ADC, Voltaje");
+  delay(2000);
+}
+
+void loop() {
+  // Leer el potenciómetro
+  valorADC = analogRead(PIN_POTENCIOMETRO);
+  
+  // Calcular voltaje
+  voltaje = valorADC * (3.3 / 4095.0);
+  
+  // ENVIAR AL SERIAL PLOTTER:
+  // Dos valores separados por coma y sin texto adicional
+  Serial.print(valorADC);
+  Serial.print(",");
+  Serial.println(voltaje, 3);  // 3 decimales para el voltaje
+  
+  // Pequeño delay para controlar velocidad del plotter
+  delay(50);  // Ajusta este valor según necesites (más rápido = más datos)
+}
