@@ -1,0 +1,26 @@
+#define PIN_ADC 34
+
+void setup() {
+  Serial.begin(115200);           // Comunicación serial
+  analogReadResolution(12);       // ADC de 12 bits (0-4095)
+  
+
+  Serial.println("SISTEMA INICIADO - Leyendo GPIO34");
+  Serial.println("Valor ADC, Voltaje");
+}
+
+void loop() {
+  // Leer el ADC
+  int valorADC = analogRead(PIN_ADC);
+  
+  // Calcular voltaje
+  float voltaje = valorADC * (3.3 / 4095.0);
+  
+  // ENVIAR AL SERIAL PLOTTER (solo números, separados por coma)
+  Serial.print(valorADC);
+  Serial.print(",");
+  Serial.println(voltaje, 3);
+  
+  // Pequeño delay
+  delay(10);
+}
